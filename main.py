@@ -45,36 +45,27 @@ logging.basicConfig(
 # SETUP CHROME
 # ==============================
 
+from webdriver_manager.chrome import ChromeDriverManager
+
 def setup_driver():
 
     options = webdriver.ChromeOptions()
 
-    options.binary_location = "/usr/bin/google-chrome"
-
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-
     options.add_argument("--disable-gpu")
+
     options.add_argument("--window-size=1920,1080")
 
     options.add_argument("--disable-extensions")
     options.add_argument("--disable-setuid-sandbox")
 
-    options.add_argument("--disable-images")
     options.add_argument("--blink-settings=imagesEnabled=false")
-
-    options.add_argument("--disable-background-networking")
-    options.add_argument("--disable-background-timer-throttling")
-
-    options.add_argument("--disable-sync")
-    options.add_argument("--disable-translate")
 
     options.add_argument("--no-zygote")
 
-    options.add_argument("--log-level=3")
-
-    service = Service()
+    service = Service(ChromeDriverManager().install())
 
     driver = webdriver.Chrome(service=service, options=options)
 
@@ -239,3 +230,4 @@ if __name__ == "__main__":
         logging.info(f"Siklus selesai. Menunggu {INTERVAL_CEK/60:.0f} menit")
 
         time.sleep(INTERVAL_CEK)
+

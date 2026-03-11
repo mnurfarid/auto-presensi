@@ -42,30 +42,47 @@ logging.basicConfig(
 
 
 # ==============================
-# SETUP CHROME
+# SETUP CHROME / CHROMIUM
 # ==============================
-
-from webdriver_manager.chrome import ChromeDriverManager
 
 def setup_driver():
 
     options = webdriver.ChromeOptions()
 
+    # lokasi chromium di linux container
+    options.binary_location = "/usr/bin/chromium"
+
+    # mode headless
     options.add_argument("--headless=new")
+
+    # wajib untuk server
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+
+    # optimasi
     options.add_argument("--disable-gpu")
-
     options.add_argument("--window-size=1920,1080")
-
     options.add_argument("--disable-extensions")
     options.add_argument("--disable-setuid-sandbox")
 
-    options.add_argument("--blink-settings=imagesEnabled=false")
+    options.add_argument("--disable-background-networking")
+    options.add_argument("--disable-background-timer-throttling")
+    options.add_argument("--disable-sync")
+    options.add_argument("--disable-translate")
 
     options.add_argument("--no-zygote")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--disable-notifications")
 
-    service = Service(ChromeDriverManager().install())
+    # nonaktifkan gambar agar ringan
+    prefs = {
+        "profile.managed_default_content_settings.images": 2
+    }
+
+    options.add_experimental_option("prefs", prefs)
+
+    # chromedriver bawaan linux
+    service = Service("/usr/bin/chromedriver")
 
     driver = webdriver.Chrome(service=service, options=options)
 
@@ -92,7 +109,9 @@ def cek_semua_absen():
 
         driver.get(URL_LOGIN)
 
-        wait.until(EC.presence_of_element_located((By.ID, "username"))).send_keys(USERNAME)
+        wait.until(
+            EC.presence_of_element_located((By.ID, "username"))
+        ).send_keys(USERNAME)
 
         driver.find_element(By.ID, "password").send_keys(PASSWORD)
 
@@ -100,7 +119,9 @@ def cek_semua_absen():
 
         logging.info("Menunggu login berhasil...")
 
-        wait.until(EC.url_contains("ethol.pens.ac.id/mahasiswa/beranda"))
+        wait.until(
+            EC.url_contains("ethol.pens.ac.id/mahasiswa/beranda")
+        )
 
         logging.info("Login berhasil")
 
@@ -149,7 +170,9 @@ def cek_semua_absen():
                     )
                 )
 
-                driver.execute_script("arguments[0].click();", tombol_akses)
+                driver.execute_script(
+                    "arguments[0].click();", tombol_akses
+                )
 
                 wait.until(
                     EC.element_to_be_clickable(
@@ -230,4 +253,3 @@ if __name__ == "__main__":
         logging.info(f"Siklus selesai. Menunggu {INTERVAL_CEK/60:.0f} menit")
 
         time.sleep(INTERVAL_CEK)
-

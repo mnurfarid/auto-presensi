@@ -42,17 +42,17 @@ logging.basicConfig(
 
 
 # ==============================
-# SETUP CHROME / CHROMIUM
+# SETUP CHROME
 # ==============================
 
 def setup_driver():
 
     options = webdriver.ChromeOptions()
 
-    # lokasi chromium di linux container
-    options.binary_location = "/usr/bin/chromium"
+    # lokasi google chrome di docker
+    options.binary_location = "/usr/bin/google-chrome"
 
-    # mode headless
+    # headless mode
     options.add_argument("--headless=new")
 
     # wajib untuk server
@@ -63,25 +63,21 @@ def setup_driver():
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-extensions")
-    options.add_argument("--disable-setuid-sandbox")
-
+    options.add_argument("--disable-infobars")
+    options.add_argument("--disable-notifications")
     options.add_argument("--disable-background-networking")
     options.add_argument("--disable-background-timer-throttling")
     options.add_argument("--disable-sync")
     options.add_argument("--disable-translate")
-
     options.add_argument("--no-zygote")
-    options.add_argument("--disable-infobars")
-    options.add_argument("--disable-notifications")
 
-    # nonaktifkan gambar agar ringan
+    # nonaktifkan gambar supaya lebih ringan
     prefs = {
         "profile.managed_default_content_settings.images": 2
     }
-
     options.add_experimental_option("prefs", prefs)
 
-    # chromedriver bawaan linux
+    # chromedriver dari container
     service = Service("/usr/bin/chromedriver")
 
     driver = webdriver.Chrome(service=service, options=options)
@@ -103,7 +99,7 @@ def cek_semua_absen():
 
         driver = setup_driver()
 
-        wait = WebDriverWait(driver, 120)
+        wait = WebDriverWait(driver, 60)
 
         logging.info("Membuka halaman login...")
 
@@ -120,7 +116,7 @@ def cek_semua_absen():
         logging.info("Menunggu login berhasil...")
 
         wait.until(
-            EC.url_contains("ethol.pens.ac.id/mahasiswa/beranda")
+            EC.url_contains("ethol.pens.ac.id")
         )
 
         logging.info("Login berhasil")
@@ -132,17 +128,16 @@ def cek_semua_absen():
         driver.get(URL_DAFTAR_KULIAH)
 
         wait.until(
-            EC.visibility_of_element_located(
+            EC.presence_of_element_located(
                 (By.XPATH, "//label[contains(text(),'Tahun Ajaran')]")
             )
         )
 
         logging.info("Mengambil daftar mata kuliah")
 
-        matkul_elements = wait.until(
-            EC.presence_of_all_elements_located(
-                (By.XPATH, "//span[contains(@class,'card-title-mobile')]")
-            )
+        matkul_elements = driver.find_elements(
+            By.XPATH,
+            "//span[contains(@class,'card-title-mobile')]"
         )
 
         daftar_matkul = sorted(
@@ -170,38 +165,34 @@ def cek_semua_absen():
                     )
                 )
 
-                driver.execute_script(
-                    "arguments[0].click();", tombol_akses
-                )
+                driver.execute_script("arguments[0].click();", tombol_akses)
 
                 wait.until(
-                    EC.element_to_be_clickable(
+                    EC.presence_of_element_located(
                         (By.XPATH, "//button[normalize-space(span)='Aturan Presensi']")
                     )
                 )
 
                 time.sleep(1)
 
-                tombol_presensi = driver.find_element(
-                    By.XPATH,
-                    "//button[normalize-space(span)='Presensi' and not(@disabled)]"
-                )
+                try:
 
-                if tombol_presensi.is_displayed() and tombol_presensi.is_enabled():
+                    tombol_presensi = driver.find_element(
+                        By.XPATH,
+                        "//button[normalize-space(span)='Presensi' and not(@disabled)]"
+                    )
 
-                    tombol_presensi.click()
+                    if tombol_presensi.is_displayed() and tombol_presensi.is_enabled():
 
-                    logging.warning(f"PRESENSI BERHASIL: {matkul}")
+                        tombol_presensi.click()
 
-                    return
+                        logging.warning(f"PRESENSI BERHASIL: {matkul}")
 
-                else:
+                        return
 
-                    logging.info("Presensi masih tertutup")
+                except NoSuchElementException:
 
-            except NoSuchElementException:
-
-                logging.info("Presensi belum tersedia")
+                    logging.info("Presensi belum tersedia")
 
             except TimeoutException:
 
@@ -211,10 +202,11 @@ def cek_semua_absen():
 
                 logging.error(f"Error cek {matkul}: {e}")
 
+            # kembali ke halaman daftar matkul
             driver.get(URL_DAFTAR_KULIAH)
 
             wait.until(
-                EC.visibility_of_element_located(
+                EC.presence_of_element_located(
                     (By.XPATH, "//label[contains(text(),'Tahun Ajaran')]")
                 )
             )
@@ -232,9 +224,7 @@ def cek_semua_absen():
     finally:
 
         if driver:
-
             logging.info("Menutup browser")
-
             driver.quit()
 
 
@@ -250,6 +240,6 @@ if __name__ == "__main__":
 
         cek_semua_absen()
 
-        logging.info(f"Siklus selesai. Menunggu {INTERVAL_CEK/60:.0f} menit")
+        logging.info(f"Siklus selesai. Menunggu {INTERVAL_CEK//60} menit")
 
         time.sleep(INTERVAL_CEK)

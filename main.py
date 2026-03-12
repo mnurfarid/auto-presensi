@@ -54,12 +54,18 @@ def setup_driver():
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-
     options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1920,1080")
 
     options.add_argument("--disable-extensions")
+    options.add_argument("--disable-infobars")
     options.add_argument("--disable-notifications")
+
+    options.add_argument("--window-size=1920,1080")
+
+    options.add_argument("--single-process")
+    options.add_argument("--no-zygote")
+    options.add_argument("--disable-background-networking")
+    options.add_argument("--disable-background-timer-throttling")
 
     prefs = {
         "profile.managed_default_content_settings.images": 2
@@ -72,7 +78,6 @@ def setup_driver():
     driver = webdriver.Chrome(service=service, options=options)
 
     return driver
-
 
 # ==============================
 # CEK PRESENSI
@@ -238,3 +243,4 @@ if __name__ == "__main__":
         logging.info(f"Siklus selesai. Menunggu {INTERVAL_CEK/60:.0f} menit")
 
         time.sleep(INTERVAL_CEK)
+
